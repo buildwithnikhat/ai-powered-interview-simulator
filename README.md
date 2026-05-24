@@ -40,3 +40,42 @@ cd frontend && npm run dev
 ```
 
 ## Architecture
+Browser (Next.js)
+↓ WebSocket
+FastAPI Backend
+↓
+LangGraph Orchestrator
+↓
+10 AI Agents (parallel)
+↓
+Ollama LLaMA 3 (local LLM)
+↓
+ChromaDB (persistent memory)
+PostgreSQL (structured data)
+
+## The 10 AI Agents
+
+1. **Fluency Coach** — Flow, rhythm, speaking speed
+2. **Grammar Agent** — Mistakes, corrections, explanations
+3. **Pronunciation Analyzer** — Unclear words, phoneme drills
+4. **Confidence Agent** — Filler words, hesitation, pauses
+5. **Interview Coach** — Mock interviews, answer scoring
+6. **Conversation Partner** — 5 personas for practice
+7. **Vocabulary Agent** — Professional word building
+8. **Analytics Agent** — Progress tracking
+9. **Memory Agent** — ChromaDB RAG persistence
+10. **Learning Planner** — Daily personalized tasks
+
+## Portfolio Value
+
+This project demonstrates:
+- Multi-agent AI system design
+- Real-time voice AI pipeline
+- RAG with vector databases
+- Production FastAPI architecture
+- WebSocket streaming
+- Next.js dashboard development
+- Local LLM integration
+- Docker deployment
+
+Built by Nikhat Shaikh — AI Engineer
