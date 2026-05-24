@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>AI-COS Interview Room</title>
+<style>
+*{box-sizing:border-box}
+body{font-family:sans-serif;max-width:800px;margin:0 auto;padding:20px;background:#0f0f0f;color:#fff}
+h1{color:#60a5fa;margin-bottom:4px}
+.subtitle{color:#888;font-size:13px;margin-bottom:20px}
+.card{background:#1a1a1a;border:1px solid #333;border-radius:12px;padding:20px;margin-bottom:16px}
+.card-title{font-size:13px;color:#60a5fa;font-weight:bold;margin:0 0 12px;text-transform:uppercase;letter-spacing:.05em}
+select{width:100%;padding:10px;background:#111;color:#fff;border:1px solid #444;border-radius:8px;font-size:15px;margin-bottom:12px}
+button{padding:12px 24px;border:none;border-radius:8px;font-size:15px;cursor:pointer;transition:all .2s;margin:4px}
+button:disabled{opacity:0.4;cursor:not-allowed}
+.btn-primary{background:#2563eb;color:#fff;font-size:17px;padding:14px 32px}
+.btn-success{background:#16a34a;color:#fff}
+.btn-danger{background:#dc2626;color:#fff}
+.btn-secondary{background:#374151;color:#fff}
+.btn-next{background:#7c3aed;color:#fff}
+#questionBox{background:#1a2744;border-radius:10px;padding:20px;min-height:80px;font-size:18px;line-height:1.6;color:#fff;margin-bottom:12px}
+#questionMeta{font-size:13px;color:#888;margin-bottom:8px}
+#starTip{background:#1c1a2e;border-left:3px solid #7c3aed;padding:12px;border-radius:0 8px 8px 0;font-size:13px;color:#a78bfa;line-height:1.6;display:none;margin-bottom:12px;white-space:pre-line}
+#answerBox{width:100%;padding:12px;background:#111;color:#fff;border:1px solid #444;border-radius:8px;font-size:15px;min-height:100px;resize:vertical;margin-bottom:8px}
+#transcript{background:#1a2744;border-radius:8px;padding:12px;min-height:40px;font-size:14px;color:#93c5fd;margin-bottom:8px}
+#feedback{background:#14291f;border-radius:10px;padding:16px;min-height:80px;line-height:1.7}
+.score-badge{display:inline-block;padding:4px 14px;border-radius:20px;font-weight:bold;font-size:14px;margin-bottom:8px}
+.score-high{background:#14532d;color:#4ade80}
+.score-mid{background:#713f12;color:#fbbf24}
+.score-low{background:#450a0a;color:#f87171}
+#status{padding:10px;background:#111;border-radius:8px;font-size:13px;color:#9ca3af;margin-bottom:8px;min-height:36px}
+.scores-row{display:flex;gap:10px;margin-bottom:12px}
+.score-box{flex:1;background:#111;border-radius:8px;padding:10px;text-align:center}
+.score-val{font-size:24px;font-weight:bold;color:#60a5fa}
+.score-lbl{font-size:11px;color:#888;margin-top:2px}
+#progressBar{height:6px;background:#333;border-radius:3px;margin-bottom:16px;overflow:hidden}
+#progressFill{height:100%;background:#2563eb;border-radius:3px;transition:width .4s}
+#recTimer{font-size:20px;color:#ef4444;font-weight:bold;display:none}
+#setup{display:block}
+#session{display:none}
+#complete{display:none}
+.final-score{font-size:60px;font-weight:bold;color:#60a5fa;text-align:center;margin:12px 0}
+.grade{font-size:22px;text-align:center;color:#4ade80;margin-bottom:8px}
+</style>
+</head>
+<body>
+
+<h1>🎤 AI-COS Interview Room</h1>
+<p class="subtitle">Phase 4 — Interview Simulation with AI Coaching</p>
+
+<div id="status">Connecting to AI-COS...</div>
+
+<!-- SETUP SCREEN -->
+<div id="setup">
+  <div class="card">
+    <p class="card-title">Select Interview Type</p>
+    <select id="interviewType">
+      <option value="hr">HR Interview — Behavioral Questions</option>
+      <option value="technical">Technical Interview — Software Engineering</option>
+      <option value="ai">AI Engineering Interview</option>
+      <option value="devops">DevOps Interview</option>
+      <option value="freelance">Freelance Client Call</option>
+      <option value="fastapi">FastAPI Project Explanation</option>
+      <option value="ai_agent">AI Agent Project Explanation</option>
+      <option value="rag">RAG System Project Explanation</option>
+      <option value="storytelling">Storytelling Practice</option>
+      <option value="confidence">Confidence Building Exercises</option>
+    </select>
+    <button class="btn-primary" onclick="startInterview()">🚀 Start Interview</button>
+  </div>
+
+  <div class="card">
+    <p class="card-title">How It Works</p>
+    <p style="font-size:14px;color:#9ca3af;line-height:1.7">
+      1. Select interview type above<br>
+      2. AI asks you 6 questions<br>
+      3. Answer by typing OR speaking<br>
+      4. AI evaluates each answer with a score and specific feedback<br>
+      5. Get your overall interview score at the end<br>
+      6. The AI speaks questions and feedback aloud
+    </p>
+  </div>
+</div>
+
+<!-- INTERVIEW SESSION -->
+<div id="session">
+  <div id="progressBar"><div id="progressFill" style="width:0%"></div></div>
+
+  <div class="card">
+    <div id="questionMeta">Question 1 of 6</div>
+    <div id="questionBox">Loading question...</div>
+    <div id="starTip"></div>
+  </div>
+
+  <div class="card">
+    <p class="card-title">🎙️ Voice Answer</p>
+    <div id="recTimer">⏺ 0s</div>
+    <button class="btn-success" id="startRec" onclick="startRecording()">🎙️ Start Speaking</button>
+    <button class="btn-danger"  id="stopRec"  onclick="stopRecording()" disabled>⏹ Stop</button>
+    <div id="transcript" style="margin-top:8px;display:none"></div>
+  </div>
+
+  <div class="card">
+    <p class="card-title">💬 Text Answer (or paste your spoken answer)</p>
+    <textarea id="answerBox" placeholder="Type your answer here..."></textarea>
+    <button class="btn-primary" onclick="submitTextAnswer()">Submit Answer</button>
+  </div>
+
+  <div class="card" id="feedbackCard" style="display:none">
+    <p class="card-title">AI Coach Feedback</p>
+    <div class="scores-row">
+      <div class="score-box"><div class="score-val" id="ansScore">--</div><div class="score-lbl">Answer Score</div></div>
+    </div>
+    <div id="feedback"></div>
+    <br>
+    <button class="btn-next" id="nextBtn" onclick="nextQuestion()">Next Question →</button>
+  </div>
+</div>
+
+<!-- COMPLETION SCREEN -->
+<div id="complete">
+  <div class="card" style="text-align:center">
+    <p class="card-title">Interview Complete!</p>
+    <div class="final-score" id="finalScore">--</div>
+    <div class="grade" id="finalGrade"></div>
+    <p id="finalAdvice" style="color:#9ca3af;font-size:15px;line-height:1.7;margin:12px 0"></p>
+    <button class="btn-primary" onclick="resetInterview()">🔄 Start New Interview</button>
+  </div>
+</div>
+
+<script>
+const HOST = window.location.hostname;
+const WS_URL = `ws://${HOST}:8000/interview/ws`;
+let ws, mr, chunks=[], stream, actx, rec=false, secs=0, tmr;
+let currentQuestion='', qNum=1, totalQ=6;
+
+function log(m){console.log('['+new Date().toLocaleTimeString()+']',m)}
+function setStatus(m){document.getElementById('status').textContent=m}
+
+function connect(){
+  ws = new WebSocket(WS_URL);
+  ws.onopen  = ()=>{ setStatus('✅ Connected — select interview type and start'); log('Connected') };
+  ws.onclose = ()=>{ setStatus('❌ Disconnected — refresh page') };
+  ws.onerror = ()=>{ setStatus('❌ Cannot reach server — is FastAPI running?') };
+  ws.onmessage = async e => {
+    if(e.data instanceof Blob){ await playAudio(e.data); return }
+    const msg = JSON.parse(e.data);
+    log('← '+msg.type);
+    handleMessage(msg);
+  };
+}
+
+function handleMessage(msg){
+  switch(msg.type){
+    case 'interview_started':
+      showSession(msg);
+      break;
+    case 'status':
+      setStatus('⏳ '+msg.message);
+      break;
+    case 'transcript':
+      const tb = document.getElementById('transcript');
+      tb.style.display='block';
+      tb.textContent = '🎤 Heard: '+msg.text;
+      document.getElementById('answerBox').value = msg.text;
+      break;
+    case 'answer_evaluated':
+      showFeedback(msg);
+      break;
+    case 'next_question':
+      updateQuestion(msg);
+      break;
+    case 'interview_complete':
+      showComplete(msg);
+      break;
+    case 'error':
+      setStatus('❌ '+msg.message);
+      break;
+  }
+}
+
+function startInterview(){
+  const type = document.getElementById('interviewType').value;
+  ws.send(JSON.stringify({type:'start_interview', interview_type: type}));
+  setStatus('⏳ Starting interview...');
+}
+
+function showSession(msg){
+  document.getElementById('setup').style.display='none';
+  document.getElementById('session').style.display='block';
+  document.getElementById('complete').style.display='none';
+  document.getElementById('feedbackCard').style.display='none';
+
+  currentQuestion = msg.question;
+  qNum = 1;
+  totalQ = msg.total_questions;
+
+  document.getElementById('questionBox').textContent = msg.question;
+  document.getElementById('questionMeta').textContent = `Question 1 of ${totalQ}`;
+  updateProgress(1, totalQ);
+
+  const starTip = document.getElementById('starTip');
+  if(msg.star_tip){
+    starTip.style.display='block';
+    starTip.textContent = msg.star_tip;
+  } else {
+    starTip.style.display='none';
+  }
+
+  setStatus('✅ Interview started — answer by voice or text');
+}
+
+function updateQuestion(msg){
+  currentQuestion = msg.question;
+  qNum = msg.question_number;
+  totalQ = msg.total_questions;
+
+  document.getElementById('questionBox').textContent = msg.question;
+  document.getElementById('questionMeta').textContent = `Question ${qNum} of ${totalQ}`;
+  document.getElementById('answerBox').value = '';
+  document.getElementById('transcript').style.display='none';
+  document.getElementById('feedbackCard').style.display='none';
+  updateProgress(qNum, totalQ);
+  setStatus('✅ New question — answer by voice or text');
+}
+
+function updateProgress(current, total){
+  const pct = ((current-1)/total)*100;
+  document.getElementById('progressFill').style.width = pct+'%';
+}
+
+function showFeedback(msg){
+  document.getElementById('feedbackCard').style.display='block';
+
+  const score = msg.score;
+  const scoreEl = document.getElementById('ansScore');
+  scoreEl.textContent = score;
+  scoreEl.className = 'score-val';
+
+  const badgeClass = score>=75?'score-high':score>=50?'score-mid':'score-low';
+
+  document.getElementById('feedback').innerHTML = `
+    <span class="score-badge ${badgeClass}">${score}/100</span>
+    <p><strong style="color:#60a5fa">Feedback:</strong> ${msg.feedback}</p>
+    <p><strong style="color:#f59e0b">Improvement:</strong> ${msg.improvement}</p>
+    <p><strong style="color:#a78bfa">Follow-up:</strong> ${msg.follow_up}</p>
+    <p style="color:#4ade80">💪 ${msg.encouragement}</p>
+  `;
+  setStatus('✅ Answer evaluated — review feedback then click Next Question');
+}
+
+function showComplete(msg){
+  document.getElementById('session').style.display='none';
+  document.getElementById('complete').style.display='block';
+  document.getElementById('finalScore').textContent = msg.score+'/100';
+  document.getElementById('finalGrade').textContent = msg.grade || '';
+  document.getElementById('finalAdvice').textContent = msg.advice || '';
+  setStatus('🎉 Interview complete!');
+}
+
+function resetInterview(){
+  document.getElementById('setup').style.display='block';
+  document.getElementById('session').style.display='none';
+  document.getElementById('complete').style.display='none';
+  setStatus('✅ Select a new interview type');
+}
+
+function nextQuestion(){
+  ws.send(JSON.stringify({type:'next_question'}));
+  setStatus('⏳ Loading next question...');
+}
+
+function submitTextAnswer(){
+  const answer = document.getElementById('answerBox').value.trim();
+  if(!answer){setStatus('⚠️ Please write your answer first');return}
+  ws.send(JSON.stringify({type:'submit_answer', answer}));
+  setStatus('⏳ Evaluating your answer...');
+}
+
+// Voice recording
+async function startRecording(){
+  try{
+    stream = await navigator.mediaDevices.getUserMedia({audio:{channelCount:1,sampleRate:16000,echoCancellation:true}});
+  }catch(e){setStatus('❌ Mic error: '+e.message);return}
+
+  chunks=[];rec=true;secs=0;
+  const mime=['audio/webm;codecs=opus','audio/webm',''].find(f=>!f||MediaRecorder.isTypeSupported(f));
+  try{mr=mime?new MediaRecorder(stream,{mimeType:mime}):new MediaRecorder(stream)}
+  catch(e){mr=new MediaRecorder(stream)}
+
+  mr.ondataavailable=e=>{if(e.data?.size>0)chunks.push(e.data)};
+  mr.onstop=async()=>{
+    clearInterval(tmr);
+    document.getElementById('recTimer').style.display='none';
+    rec=false;
+    document.getElementById('startRec').disabled=false;
+    document.getElementById('stopRec').disabled=true;
+    const total=chunks.reduce((s,c)=>s+c.size,0);
+    if(total<3000){setStatus('⚠️ Too short — speak for at least 3 seconds');return}
+    const blob=new Blob(chunks,{type:mime||'audio/webm'});
+    ws.send(await blob.arrayBuffer());
+    setStatus('⏳ Sending voice answer...');
+  };
+
+  mr.start(500);
+  document.getElementById('startRec').disabled=true;
+  document.getElementById('stopRec').disabled=false;
+  document.getElementById('recTimer').style.display='block';
+  tmr=setInterval(()=>{secs++;document.getElementById('recTimer').textContent='⏺ '+secs+'s'},1000);
+  setStatus('🔴 Recording — speak your answer clearly');
+}
+
+function stopRecording(){
+  if(mr&&mr.state!=='inactive')mr.stop();
+  stream?.getTracks().forEach(t=>t.stop());
+}
+
+let _audioPlaying = false;
+async function playAudio(blob){
+  if(_audioPlaying) return;
+  _audioPlaying = true;
+  try{
+    actx=actx||new(window.AudioContext||window.webkitAudioContext)();
+    if(actx.state==='suspended')await actx.resume();
+    const src=actx.createBufferSource();
+    src.buffer=await actx.decodeAudioData(await blob.arrayBuffer());
+    src.connect(actx.destination);
+    if(!actx._playing){actx._playing=true;src.start(0);src.onended=()=>{actx._playing=false};}
+    log('Playing audio');
+  }catch(e){log('Audio error: '+e.message)}
+}
+
+connect();
+</script>
+</body>
+</html>

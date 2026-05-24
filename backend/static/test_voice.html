@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+<head><title>AI-COS v3</title>
+<style>
+body{background:#0f0f0f;color:#fff;font-family:sans-serif;max-width:600px;margin:40px auto;padding:20px}
+button{padding:12px 24px;margin:8px;border:none;border-radius:8px;font-size:16px;cursor:pointer}
+#start{background:#16a34a;color:#fff;font-size:20px;padding:20px 40px}
+#stop{background:#dc2626;color:#fff;font-size:20px;padding:20px 40px}
+#send{background:#7c3aed;color:#fff}
+textarea{width:100%;padding:10px;background:#1e1e1e;color:#fff;border:1px solid #333;border-radius:8px;font-size:14px;margin:8px 0;box-sizing:border-box}
+#log{background:#111;border:1px solid #333;border-radius:8px;padding:10px;font-family:monospace;font-size:12px;color:#0f0;height:150px;overflow-y:auto}
+#coaching{background:#14291f;border-radius:8px;padding:12px;color:#4ade80;min-height:80px;font-size:15px;line-height:1.6}
+.sec{margin:16px 0;padding:16px;background:#1a1a1a;border-radius:8px}
+</style>
+</head>
+<body>
+<h1>🎙️ AI-COS v3 — Debug Mode</h1>
+
+<div class="sec">
+<h3>Scores</h3>
+<span id="scores">waiting...</span>
+</div>
+
+<div class="sec">
+<h3>Transcript (what Whisper heard)</h3>
+<div id="transcript" style="min-height:40px;padding:8px;background:#1a2744;border-radius:6px">...</div>
+</div>
+
+<div class="sec">
+<h3>AI Coach Response</h3>
+<div id="coaching">...</div>
+</div>
+
+<div class="sec">
+<h3>🎙️ Voice Mode</h3>
+<p style="color:#888;font-size:13px">Click Start → speak slowly → wait 3 seconds → click Stop</p>
+<div id="timer" style="font-size:24px;color:#ef4444;display:none">⏺ 0s recording</div>
+<br>
+<button id="start" onclick="startRec()">🎙️ START SPEAKING</button>
+<button id="stop" onclick="stopRec()" disabled>⏹ STOP</button>
+</div>
+
+<div class="sec">
+<h3>💬 Text Mode</h3>
+<textarea id="txt" rows="2" placeholder="Type here and press Enter..." onkeydown="if(event.key==='Enter'){sendTxt();event.preventDefault()}"></textarea>
+<button id="send" onclick="sendTxt()">Send Text</button>
+</div>
+
+<div class="sec">
+<h3>Debug Log</h3>
+<div id="log">Initializing...</div>
+</div>
+
+<script>
+const HOST = window.location.hostname;
+const WS = `ws://${HOST}:8000/voice/ws`;
+let ws, mr, chunks=[], stream, actx, rec=false, busy=false, secs=0, tmr;
+
+function log(m){const d=document.getElementById('log');d.innerHTML='['+new Date().toLocaleTimeString()+'] '+m+'<br>'+d.innerHTML}
+function set(id,v){document.getElementById(id).textContent=v}
+function setHTML(id,v){document.getElementById(id).innerHTML=v}
+
+function connect(){
+  log('Connecting to '+WS);
+  ws=new WebSocket(WS);
+  ws.onopen=()=>{log('✅ Connected');ws.send(JSON.stringify({type:'start_session'}))};
+  ws.onclose=()=>log('❌ Disconnected');
+  ws.onerror=()=>log('❌ Error connecting');
+  ws.onmessage=async e=>{
+    if(e.data instanceof Blob){await play(e.data);return}
+    const m=JSON.parse(e.data);
+    log('← '+m.type+(m.text?' | '+m.text.substring(0,60):''));
+    if(m.type==='transcript'){
+      setHTML('transcript',m.text?'<strong>'+m.text+'</strong>':'<em style="color:#f87171">Empty — speak louder/longer</em>');
+    }
+    if(m.type==='analysis'){
+      const d=m.data;
+      set('scores',`Confidence:${d.confidence_score} | Fluency:${d.fluency_score} | Fillers:${d.filler_count} | Words:${d.word_count} | Overall:${d.overall_score}`);
+    }
+    if(m.type==='coaching') setHTML('coaching',m.text);
+    if(m.type==='error') log('❌ ERROR: '+m.message);
+    if(m.type==='audio_ready') log('🔊 Playing audio...');
+  };
+}
+
+async function startRec(){
+  if(busy)return;
+  try{
+    stream=await navigator.mediaDevices.getUserMedia({audio:{channelCount:1,sampleRate:16000,echoCancellation:true,noiseSuppression:true}});
+    log('✅ Mic: '+stream.getAudioTracks()[0].label);
+  }catch(e){log('❌ Mic error: '+e.message);return}
+
+  chunks=[];rec=true;busy=true;
+  const mime=['audio/webm;codecs=opus','audio/webm','audio/ogg;codecs=opus',''].find(f=>!f||MediaRecorder.isTypeSupported(f));
+  log('Format: '+(mime||'browser default'));
+  try{mr=mime?new MediaRecorder(stream,{mimeType:mime}):new MediaRecorder(stream)}
+  catch(e){mr=new MediaRecorder(stream)}
+
+  mr.ondataavailable=e=>{if(e.data?.size>0){chunks.push(e.data);log('Chunk: '+e.data.size+' bytes | total chunks: '+chunks.length)}};
+  mr.onstop=async()=>{
+    clearInterval(tmr);
+    document.getElementById('timer').style.display='none';
+    rec=false;
+    const total=chunks.reduce((s,c)=>s+c.size,0);
+    log('STOP — total: '+total+' bytes in '+chunks.length+' chunks');
+    if(total<3000){log('⚠️ Too small! Speak louder/longer');busy=false;document.getElementById('start').disabled=false;document.getElementById('stop').disabled=true;return}
+    const blob=new Blob(chunks,{type:mime||'audio/webm'});
+    log('Sending '+blob.size+' bytes to Whisper...');
+    ws.send(await blob.arrayBuffer());
+    chunks=[];
+  };
+
+  mr.start(500); // chunk every 500ms for bigger pieces
+  document.getElementById('start').disabled=true;
+  document.getElementById('stop').disabled=false;
+  document.getElementById('timer').style.display='block';
+  secs=0;
+  tmr=setInterval(()=>{secs++;document.getElementById('timer').textContent='⏺ '+secs+'s recording'},1000);
+  log('⏺ Recording started — speak now!');
+}
+
+function stopRec(){
+  if(mr&&mr.state!=='inactive')mr.stop();
+  stream?.getTracks().forEach(t=>t.stop());
+  document.getElementById('start').disabled=false;
+  document.getElementById('stop').disabled=true;
+}
+
+function sendTxt(){
+  if(busy){log('⚠️ Busy — wait');return}
+  const t=document.getElementById('txt').value.trim();
+  if(!t){log('⚠️ Empty');return}
+  busy=true;
+  log('→ Sending text: '+t);
+  ws.send(JSON.stringify({type:'text_message',text:t}));
+  document.getElementById('txt').value='';
+}
+
+async function play(blob){
+  try{
+    actx=actx||new(window.AudioContext||window.webkitAudioContext)();
+    if(actx.state==='suspended')await actx.resume();
+    const src=actx.createBufferSource();
+    src.buffer=await actx.decodeAudioData(await blob.arrayBuffer());
+    src.connect(actx.destination);
+    src.start(0);
+    src.onended=()=>{log('✅ Audio done');busy=false;document.getElementById('start').disabled=false};
+    log('🔊 Playing '+src.buffer.duration.toFixed(1)+'s');
+  }catch(e){log('Audio error: '+e.message);busy=false;document.getElementById('start').disabled=false}
+}
+
+connect();
+</script>
+</body>
+</html>
