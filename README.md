@@ -1,3 +1,4 @@
+
 # 🚀 AI Communication Operating System (AI-COS)
 
 A production-grade, multi-agent voice AI platform that coaches you to become
@@ -14,16 +15,16 @@ a confident, fluent, and professional communicator.
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| Backend | Python, FastAPI, WebSockets |
-| AI Agents | LangGraph, LangChain, Ollama (LLaMA 3) |
-| Voice STT | OpenAI Whisper (local) |
-| Voice TTS | gTTS |
-| Memory | ChromaDB, RAG pipeline |
-| Database | PostgreSQL, Redis |
-| Frontend | Next.js 16, TailwindCSS |
-| Infrastructure | Docker, Docker Compose |
+| Layer          | Technology                             |
+| -------------- | -------------------------------------- |
+| Backend        | Python, FastAPI, WebSockets            |
+| AI Agents      | LangGraph, LangChain, Ollama (LLaMA 3) |
+| Voice STT      | OpenAI Whisper (local)                 |
+| Voice TTS      | gTTS                                   |
+| Memory         | ChromaDB, RAG pipeline                 |
+| Database       | PostgreSQL, Redis                      |
+| Frontend       | Next.js 16, TailwindCSS                |
+| Infrastructure | Docker, Docker Compose                 |
 
 ## Quick Start
 
@@ -40,6 +41,7 @@ cd frontend && npm run dev
 ```
 
 ## Architecture
+
 Browser (Next.js)
 ↓ WebSocket
 FastAPI Backend
@@ -69,6 +71,7 @@ PostgreSQL (structured data)
 ## Portfolio Value
 
 This project demonstrates:
+
 - Multi-agent AI system design
 - Real-time voice AI pipeline
 - RAG with vector databases
